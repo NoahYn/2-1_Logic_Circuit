@@ -3,7 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <set>
-
+#include <chrono>
 
 using namespace std;
 
@@ -41,6 +41,7 @@ int main(void) {
 	ifstream fin("input_minterm.txt");
 	ofstream fout("result.txt");
 
+	auto start = chrono :: steady_clock::now();
 	int b_len; // 비트 길이
 	fin >> b_len; 
 	vector<minTerm> MT[b_len+1]; // minterms
@@ -88,6 +89,7 @@ int main(void) {
 		if (brk) break;
 		b_len--;
 	}
+	for (auto &k : PIs) cout << k << '\n';
 	
 	vector<vector<bool>> table; // Essential PI를 찾기 위한 표
 	vector<bool> row;
@@ -121,10 +123,35 @@ int main(void) {
 		}
 	}
 
-	for (auto &k : EPIs) cout << k << '\n';
-
-	fout << "Cost(# of transistors): ";
+	b_len = EPIs[0].length(); // 비트 길이 다시 구하기
+	int Or = EPIs.size() * 2 + 2; // EPI의 개수가 OR의 input 개수(input 개수 * 2 => NOR, + inverter(2))
+	int trn_num = Or;
+	int Not = 0;	int And = 0;
+	for (auto &k : EPIs) {
+		fout << k << '\n';
+		int cnt_dash = 0; // '-' 대시 하나마다 AND input 하나씩 감소
+		int cnt_zero = 0; // 인버터를 위해 0이 있는 자리 계산
+		for (int i = 0; i < b_len; i++) {
+			if (k[i] == '-') cnt_dash++;
+			if (k[i] == '0') cnt_zero += (1 << i); // 0의 위치 정보를 2진법에서 10진법으로 전환
+		}
+		And = (b_len - cnt_dash) * 2 + 2;
+		trn_num += And;
+		Not = Not | cnt_zero; // 0이 있는 위치들을 합집합연산(각 인덱스별로 0이 있는지 없는지)
+		while (Not) {
+			if (Not % 2 == 1) trn_num += 2; // 0 한개마다 인버터 하나씩 추가(트랜지스터 두개씩)
+			Not >>= 1;
+		}
+	}
+	fout << "\nCost(# of transistors): " << trn_num;
 
 	fin.close();
 	fout.close();
+
+	auto end = chrono::steady_clock::now();
+	cout << 
+	chrono::duration_cast<chrono::seconds>(end-start).count() << "s " <<
+	chrono::duration_cast<chrono::milliseconds>(end-start).count() << "ms " <<
+	chrono::duration_cast<chrono::microseconds>(end-start).count() << "us " <<
+	chrono::duration_cast<chrono::nanoseconds>(end-start).count() << "ns\n";
 }
