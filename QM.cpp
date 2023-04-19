@@ -42,20 +42,20 @@ int getNumTrans(set<string> &EPIs, int b_len) {
 	int Or = EPIs.size(); // EPI의 개수가 OR의 input 개수
 	if (Or > 1) // 인풋 개수는 항상 2보다 큼 
 		trans_num += (Or << 1) + 2; // (NOR(input * 2) + inverter(2) => OR)
-	
+
 	int Not = 0;	int And = 0;
 	for (auto &k : EPIs) {
 		int cnt_dash = 0; // '-' 대시 하나마다 AND input 하나씩 감소
-		int cnt_zero = 0; // 인버터를 위해 0이 있는 자리 계산
+		int pos_zero = 0; // 인버터를 위해 0이 있는 자리 계산
 		for (int i = 0; i < b_len; i++) {
 			if (k[i] == '-') cnt_dash++;
-			if (k[i] == '0') cnt_zero += (1 << i); // 0의 위치 정보를 2진법에서 10진법으로 전환
+			if (k[i] == '0') pos_zero += (1 << i); // 0의 위치 정보를 2진법에서 10진법으로 전환
 		}
 		And = b_len - cnt_dash;
 		if (And > 1) // 인풋 개수는 항상 2보다 큼
 			trans_num += (And << 1) + 2;  // (NAND(input * 2) + inverter(2) => AND)
 		
-		Not |= cnt_zero; // 0이 있는 위치들을 합집합연산(각 인덱스별로 0이 있는지 없는지)
+		Not |= pos_zero; // 0이 있는 위치들을 합집합연산(각 인덱스별로 0이 있는지 없는지)
 	}
 	while (Not) {
 		if (Not % 2 == 1) trans_num += 2; // 0 한개마다 인버터 하나씩 추가(트랜지스터 두개씩)
@@ -78,7 +78,7 @@ for (int fi = 0; fi < 5; fi++) {
 
 	int b_len; // 비트 길이
 	fin >> b_len; 
-	vector<minTerm> MT[b_len+1]; // minterms
+	vector<minTerm> *MT = new vector<minTerm>[b_len+1]; // minterms
 	vector<string> PIs; // Prime Implicants
 	vector<string> trueMT; // true minterms
 
@@ -117,17 +117,12 @@ for (int fi = 0; fi < 5; fi++) {
 			for (auto &k : uniq)
 				if (count(k.begin(), k.end(), '1') == i) MT[i].push_back(k); // 새로 만든 것들 다시 1개수 순으로 저장
 		}
-		//for (int i = 0; i < b_len + 1; i++)
-		//	for (auto &k : MT[i]) fout << i << ' ' << k.binary << '\n';
-		//fout << '\n';
 		uniq.clear();
 
 		if (brk) break;
 		b_len--;
 	}
 
-//	for (auto &k : PIs) cout << k << '\n';
-	
 	set<string> EPIs; // Essential PIs
 	vector<int> table; // Essential PI를 찾기 위한 표. int형 정수를 통해 비트로 표현.(메모리, 성능)
 	int col = 0;
@@ -160,10 +155,10 @@ for (int fi = 0; fi < 5; fi++) {
 
 	while(!trueMT.empty()) { // EPI 다 못찾은 경우
 		int maxMt = 0; // 한 행당 minterm의 최대 개수
-		int maxpos = -1; // minterm이 가장 많은 행의 위치	
+		int maxpos = -1; // minterm이 가장 많은 행의 위치
+		int max_dash = 0; // 가장 많은 행이 두개 이상이라면, 트랜지스터를 줄이기 위해 대시가 많은 것을 선택
 
 		if (trueMT.size() < 2) {
-			if (trueMT.empty()) break; // 다 찾은 경우
 			for (int i = 0; i < PIs.size(); i++) { // 하나만 남은 경우
 				if (table[0] & (1 << i)) {
 					EPIs.emplace(PIs[i]);
@@ -177,8 +172,13 @@ for (int fi = 0; fi < 5; fi++) {
 			for (int j = 0; j < trueMT.size(); j++) {
 				if (table[j] & (1 << i)) cnt++; // MT가 있으면 카운트
 			}
-			if (maxMt < cnt) {
+			if (maxMt < cnt) { // minterm이 더 많은 행을 발견했을 때
 				maxMt = cnt;
+				max_dash = count(PIs[i].begin(), PIs[i].end(), '-');
+				maxpos = i;
+			}
+			else if (maxMt == cnt && max_dash < count(PIs[i].begin(), PIs[i].end(), '-')) { // minterm은 같지만 '-'가 더 많은 행을 발견했을 때
+				max_dash = count(PIs[i].begin(), PIs[i].end(), '-');
 				maxpos = i;
 			}
 		}
@@ -189,46 +189,11 @@ for (int fi = 0; fi < 5; fi++) {
 				trueMT.erase(trueMT.begin()+i--);
 			}
 		}
-
-		if (trueMT.size() < 2) {
-			if (trueMT.empty()) break; // 다 찾은 경우
-			for (int i = 0; i < PIs.size(); i++) { // 하나만 남은 경우
-				if (table[0] & (1 << i)) {
-					EPIs.emplace(PIs[i]);
-					break;
-				}
-			}
-		}
-
-		if (trueMT.empty()) break; // minterm 개수가 최대인 행 접근으로 해결된 경우 
-
-		for (int i = 0; i < trueMT.size(); i++) { // 다시 한 번 유일 minterm이 있는 열 확인
-			int cnt = 0;
-			int pos = -1;
-			for (int j = 0; j < PIs.size(); j++) {
-				if (table[i] & (1 << j)) {
-					cnt++;
-					pos = i;
-				}
-			}
-			if (cnt == 1) {
-				EPIs.emplace(PIs[pos]); 
-				trueMT.erase(trueMT.begin()+i--); // 해당 true minterm은 필요 없어짐.
-				if (!trueMT.empty()) {
-					for (int t = 0; t < trueMT.size(); t++) {
-						if (table[t] & (1 << pos)) {
-							table[t] = 0; // 방금 선택한 PI가 포함하는 범위. 해당 열 삭제
-							trueMT.erase(trueMT.begin()+t--); i--;
-						}
-					}
-				}
-			}
-		}
 	}
 	
-	for (auto &k : EPIs)
+	for (auto &k : EPIs) {
 			fout << k << '\n';
-	fout << "\nCost(# of transistors): " << getNumTrans(EPIs, PIs[0].length());
+	}	fout << "\nCost(# of transistors): " << getNumTrans(EPIs, PIs[0].length());
 
 	fin.close();
 }
