@@ -3,7 +3,6 @@
 #include <vector>
 #include <algorithm>
 #include <set>
-#include <chrono>
 
 using namespace std;
 
@@ -37,11 +36,24 @@ bool binMatch(string &bin1, string &bin2) {
 	return true;
 }
 
-int main(void) {
-	ifstream fin("input_minterm.txt");
-	ofstream fout("result.txt");
+void BackTracking(vector<int> &table, set<string> &EPIs, vector<string> &trueMT, vector<string> &PIs, int idx) {
 
-	auto start = chrono :: steady_clock::now();
+}
+
+
+// TODO : 제출할 때 삭제
+string file[10] = {"input_minterm.txt", "test1.txt", "test2.txt", "test3.txt", "test4.txt", "test5.txt", "test6.txt", "test7.txt", "test8.txt", "test9.txt"};
+
+int main(int argc, char *argv[]) {
+	ofstream fout("result.txt");
+	ifstream fin;
+
+for (int fi = 0; fi < 6; fi++) {
+//	ifstream fin("input_minterm.txt");
+	if (argc == 2) fin.open(argv[1]);
+	else fin.open(file[fi]);	
+	fout << "\n-------------------\n#" << fi << " test case \n";
+
 	int b_len; // 비트 길이
 	fin >> b_len; 
 	vector<minTerm> MT[b_len+1]; // minterms
@@ -56,7 +68,6 @@ int main(void) {
 		MT[ones].push_back(init); // 개수별로 정리
 	}
 	
-	vector<minTerm> next[b_len+1]; // Implicant Table의 다음 열	
 	set<string> uniq; // 합쳐진 값 중 중복 거르기 위한 set
 	while (2021202033) {
 		bool brk = 1; // 루프 탈출 플래그. 더 이상 합칠 게 없으면 1로 유지. 합쳐지면 0.
@@ -81,51 +92,61 @@ int main(void) {
 					PIs.push_back(k.binary);
 			}
 			MT[i].clear();
-			for (auto &k : uniq) 
+			for (auto &k : uniq)
 				if (count(k.begin(), k.end(), '1') == i) MT[i].push_back(k); // 새로 만든 것들 다시 1개수 순으로 저장
 		}
+		for (int i = 0; i < b_len + 1; i++)
+			for (auto &k : MT[i]) fout << i << ' ' << k.binary << '\n';
+		fout << '\n';
 		uniq.clear();
 
 		if (brk) break;
 		b_len--;
 	}
-	for (auto &k : PIs) cout << k << '\n';
+
+//	for (auto &k : PIs) cout << k << '\n';
 	
-	vector<vector<bool>> table; // Essential PI를 찾기 위한 표
-	vector<bool> row;
-	int c = PIs.size(); // 열 사이즈
-	int r = trueMT.size(); // 행 사이즈
-	for (int i = 0; i < c; i++) { 
-		for (int j = 0; j < r; j++) {
-			if (binMatch(PIs[i], trueMT[j])) row.push_back(true);
-			else row.push_back(false);
-		}
-		table.push_back(row);
-		row.clear();
-	}
+	set<string> EPIs; // Essential PIs
+	vector<int> table; // Essential PI를 찾기 위한 표. int형 정수를 통해 비트로 표현.
+	int col = 0;
 
-// TODO : 7 유일한 열이 없을 때
-
-	vector<string> EPIs; // Essential PIs
-	for (int i = 0; i < r; i++) { // 테이블 세로로 확인 
-		int cnt = 0;
-		int pos = -1;
-		for (int j = 0; j < c; j++) {
-			if (table[j][i] == true) { // 테이블 세로(열) 확인
-				cnt++; pos = j;
+	int flag = 1; // 유일한 PI를 가진 행이 하나도 없을 경우
+	for (int i = 0; i < trueMT.size(); i++) { // 열을 먼저 확인하기 위함
+		col = 0;
+		int cnt = 0; // 열에 PI가 얼마나 있는지 count
+		int pos = -1; // PI가 하나일 때 EPI로 사용할 수 있게 위치 저장
+		for (int j = 0; j < PIs.size(); j++) {
+			if (binMatch(trueMT[i], PIs[j])) {
+				col |= (1 << j);
+				cnt++;
+				pos = j;
 			}
 		}
-		if (cnt == 1) { // 열에서 유일하다면 Essential PI
-// TODO : 여기서 유일한 열이 있었는지 없었는지 확인.
-			EPIs.push_back(PIs[pos]); // EPI로 추가
-			for (int k = 0; k < r; k++) // 가로(행) 다른 PIs 삭제
-				table[pos][k] = false;
+		if (cnt == 1) { // 열에 PI 하나 -> Essential PI
+			flag = 0;
+			EPIs.emplace(PIs[pos]); 
+			trueMT.erase(trueMT.begin()+i--); // 해당 true minterm은 필요 없어짐.
+			if (!table.empty()) {
+				for (int t = 0; t < i; t++) {
+					if (table[t] & (1 << pos)) {
+						table[t] = 0; // 방금 선택한 PI가 포함하는 범위. 해당 열 삭제
+						trueMT.erase(trueMT.begin()+t--); i--;
+					}
+				}
+			}
 		}
+		else table.push_back(col);
 	}
+	if (flag) 
+		BackTracking(table, EPIs, trueMT, PIs, 0);
 
-	b_len = EPIs[0].length(); // 비트 길이 다시 구하기
-	int Or = EPIs.size() * 2 + 2; // EPI의 개수가 OR의 input 개수(input 개수 * 2 => NOR, + inverter(2))
-	int trn_num = Or;
+	int trans_num = 0; // 트랜지스터 개수
+	b_len = PIs[0].length(); // 비트 길이 다시 구하기
+
+	int Or = EPIs.size(); // EPI의 개수가 OR의 input 개수
+	if (Or > 1) // 인풋 개수는 항상 2보다 큼 
+		trans_num += (Or << 1) + 2; // (NOR(input * 2) + inverter(2) => OR)
+	
 	int Not = 0;	int And = 0;
 	for (auto &k : EPIs) {
 		fout << k << '\n';
@@ -135,23 +156,20 @@ int main(void) {
 			if (k[i] == '-') cnt_dash++;
 			if (k[i] == '0') cnt_zero += (1 << i); // 0의 위치 정보를 2진법에서 10진법으로 전환
 		}
-		And = (b_len - cnt_dash) * 2 + 2;
-		trn_num += And;
-		Not = Not | cnt_zero; // 0이 있는 위치들을 합집합연산(각 인덱스별로 0이 있는지 없는지)
-		while (Not) {
-			if (Not % 2 == 1) trn_num += 2; // 0 한개마다 인버터 하나씩 추가(트랜지스터 두개씩)
-			Not >>= 1;
-		}
+		And = b_len - cnt_dash;
+		if (And > 1) // 인풋 개수는 항상 2보다 큼
+			trans_num += (And << 1) + 2;  // (NAND(input * 2) + inverter(2) => AND)
+		
+		Not |= cnt_zero; // 0이 있는 위치들을 합집합연산(각 인덱스별로 0이 있는지 없는지)
 	}
-	fout << "\nCost(# of transistors): " << trn_num;
+	while (Not) {
+		if (Not % 2 == 1) trans_num += 2; // 0 한개마다 인버터 하나씩 추가(트랜지스터 두개씩)
+		Not >>= 1;
+	}
+	
+	fout << "\nCost(# of transistors): " << trans_num;
 
 	fin.close();
+}
 	fout.close();
-
-	auto end = chrono::steady_clock::now();
-	cout << 
-	chrono::duration_cast<chrono::seconds>(end-start).count() << "s " <<
-	chrono::duration_cast<chrono::milliseconds>(end-start).count() << "ms " <<
-	chrono::duration_cast<chrono::microseconds>(end-start).count() << "us " <<
-	chrono::duration_cast<chrono::nanoseconds>(end-start).count() << "ns\n";
 }
