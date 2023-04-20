@@ -7,7 +7,7 @@
 using namespace std;
 
 class minTerm {
-public :
+public:
 	char value;
 	string binary;
 	bool isCmbnd;
@@ -16,106 +16,99 @@ public :
 	minTerm(string binary) { this->binary = binary; isCmbnd = false; }
 };
 
-int bincmp(string &bin1, string &bin2) {
+int bincmp(string& bin1, string& bin2) {
 	int cnt = 0;
 	int pos = 0;
 	for (int i = 0; i < bin1.length(); i++) {
-		if (bin1[i] != bin2[i]) { 
-			cnt++; // ë‹¤ë¥¸ ë¹„íŠ¸ ê°œìˆ˜
-			pos = i; // ìœ„ì¹˜ ì €ì¥
+		if (bin1[i] != bin2[i]) {
+			cnt++; // ´Ù¸¥ ºñÆ® °³¼ö
+			pos = i; // À§Ä¡ ÀúÀå
 		}
 	}
-	return (cnt == 1) ? pos : -1; // ë‹¤ë¥¸ ê²Œ í•˜ë‚˜ë©´ ìœ„ì¹˜ ë°˜í™˜, or -1 ë°˜í™˜
+	return (cnt == 1) ? pos : -1; // ´Ù¸¥ °Ô ÇÏ³ª¸é À§Ä¡ ¹İÈ¯, or -1 ¹İÈ¯
 }
 
-bool binMatch(string &bin1, string &bin2) {
+bool binMatch(string& bin1, string& bin2) {
 	for (int i = 0; i < bin1.length(); i++) {
-		if (bin1[i] == '-' || bin2[i] == '-') continue; // '-'ëŠ” 0ê³¼ 1 ë‘˜ë‹¤ í¬í•¨, match
-		if (bin1[i] != bin2[i]) return false; // ë¹„íŠ¸ê°€ ë‹¤ë¥´ë©´ false
+		if (bin1[i] == '-' || bin2[i] == '-') continue; // '-'´Â 0°ú 1 µÑ´Ù Æ÷ÇÔ, match
+		if (bin1[i] != bin2[i]) return false; // ºñÆ®°¡ ´Ù¸£¸é false
 	}
 	return true;
 }
 
-int getNumTrans(set<string> &EPIs, int b_len) {
-	int trans_num = 0; // íŠ¸ëœì§€ìŠ¤í„° ê°œìˆ˜
+size_t getNumTrans(set<string>& EPIs, int b_len) {
+	size_t trans_num = 0; // Æ®·£Áö½ºÅÍ °³¼ö
 
-	int Or = EPIs.size(); // EPIì˜ ê°œìˆ˜ê°€ ORì˜ input ê°œìˆ˜
-	if (Or > 1) // ì¸í’‹ ê°œìˆ˜ëŠ” í•­ìƒ 2ë³´ë‹¤ í¼ 
+	size_t Or = EPIs.size(); // EPIÀÇ °³¼ö°¡ ORÀÇ input °³¼ö
+	if (Or > 1) // ÀÎÇ² °³¼ö´Â Ç×»ó 2º¸´Ù Å­ 
 		trans_num += (Or << 1) + 2; // (NOR(input * 2) + inverter(2) => OR)
 
-	int Not = 0;	int And = 0;
-	for (auto &k : EPIs) {
-		int cnt_dash = 0; // '-' ëŒ€ì‹œ í•˜ë‚˜ë§ˆë‹¤ AND input í•˜ë‚˜ì”© ê°ì†Œ
-		int pos_zero = 0; // ì¸ë²„í„°ë¥¼ ìœ„í•´ 0ì´ ìˆëŠ” ìë¦¬ ê³„ì‚°
+	size_t Not = 0;	int And = 0;
+	for (auto& k : EPIs) {
+		int cnt_dash = 0; // '-' ´ë½Ã ÇÏ³ª¸¶´Ù AND input ÇÏ³ª¾¿ °¨¼Ò
+		size_t pos_zero = 0; // ÀÎ¹öÅÍ¸¦ À§ÇØ 0ÀÌ ÀÖ´Â ÀÚ¸® °è»ê
 		for (int i = 0; i < b_len; i++) {
 			if (k[i] == '-') cnt_dash++;
-			if (k[i] == '0') pos_zero += (1 << i); // 0ì˜ ìœ„ì¹˜ ì •ë³´ë¥¼ 2ì§„ë²•ì—ì„œ 10ì§„ë²•ìœ¼ë¡œ ì „í™˜
+			if (k[i] == '0') pos_zero += (1 << i); // 0ÀÇ À§Ä¡ Á¤º¸¸¦ 2Áø¹ı¿¡¼­ 10Áø¹ıÀ¸·Î ÀüÈ¯
 		}
 		And = b_len - cnt_dash;
-		if (And > 1) // ì¸í’‹ ê°œìˆ˜ëŠ” í•­ìƒ 2ë³´ë‹¤ í¼
+		if (And > 1) // ÀÎÇ² °³¼ö´Â Ç×»ó 2º¸´Ù Å­
 			trans_num += (And << 1) + 2;  // (NAND(input * 2) + inverter(2) => AND)
-		
-		Not |= pos_zero; // 0ì´ ìˆëŠ” ìœ„ì¹˜ë“¤ì„ í•©ì§‘í•©ì—°ì‚°(ê° ì¸ë±ìŠ¤ë³„ë¡œ 0ì´ ìˆëŠ”ì§€ ì—†ëŠ”ì§€)
+
+		Not |= pos_zero; // 0ÀÌ ÀÖ´Â À§Ä¡µéÀ» ÇÕÁıÇÕ¿¬»ê(°¢ ÀÎµ¦½ºº°·Î 0ÀÌ ÀÖ´ÂÁö ¾ø´ÂÁö)
 	}
 	while (Not) {
-		if (Not % 2 == 1) trans_num += 2; // 0 í•œê°œë§ˆë‹¤ ì¸ë²„í„° í•˜ë‚˜ì”© ì¶”ê°€(íŠ¸ëœì§€ìŠ¤í„° ë‘ê°œì”©)
+		if (Not % 2 == 1) trans_num += 2; // 0 ÇÑ°³¸¶´Ù ÀÎ¹öÅÍ ÇÏ³ª¾¿ Ãß°¡(Æ®·£Áö½ºÅÍ µÎ°³¾¿)
 		Not >>= 1;
 	}
 	return trans_num;
 }
 
-string file[5] = {"input_minterm.txt", "test1.txt", "test2.txt", "test3.txt", "test4.txt"};
-
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
 	ios::sync_with_stdio(0);
 	ofstream fout("result.txt");
-	ifstream fin;
-
-for (int fi = 0; fi < 5; fi++) {
-//	ifstream fin("input_minterm.txt");
-	if (argc == 2) fin.open(argv[1]);
-	else fin.open(file[fi]);	
-
-	int b_len; // ë¹„íŠ¸ ê¸¸ì´
-	fin >> b_len; 
-	vector<minTerm> *MT = new vector<minTerm>[b_len+1]; // minterms
+	ifstream fin("input_minterm.txt");
+	
+	int b_len; // ºñÆ® ±æÀÌ
+	fin >> b_len;
+	vector<minTerm>* MT = new vector<minTerm>[b_len + 1]; // minterms
 	vector<string> PIs; // Prime Implicants
 	vector<string> trueMT; // true minterms
 
-	minTerm init; int ones; // mt ë²¡í„° ì´ˆê¸°í™”
+	minTerm init; int ones; // mt º¤ÅÍ ÃÊ±âÈ­
 	while (!fin.eof()) {
 		fin >> init.value >> init.binary;
-		if (init.value == 'm') trueMT.push_back(init.binary); 
-		ones = count(init.binary.begin(), init.binary.end(), '1'); // 1 ê°œìˆ˜ ì„¸ê¸°
-		MT[ones].push_back(init); // ê°œìˆ˜ë³„ë¡œ ì •ë¦¬
+		if (init.value == 'm') trueMT.push_back(init.binary);
+		ones = count(init.binary.begin(), init.binary.end(), '1'); // 1 °³¼ö ¼¼±â
+		MT[ones].push_back(init); // °³¼öº°·Î Á¤¸®
 	}
-	
-	set<string> uniq; // í•©ì³ì§„ ê°’ ì¤‘ ì¤‘ë³µ ê±°ë¥´ê¸° ìœ„í•œ set
+
+	set<string> uniq; // ÇÕÃÄÁø °ª Áß Áßº¹ °Å¸£±â À§ÇÑ set
 	while (2021202033) {
-		bool brk = 1; // ë£¨í”„ íƒˆì¶œ í”Œë˜ê·¸. ë” ì´ìƒ í•©ì¹  ê²Œ ì—†ìœ¼ë©´ 1ë¡œ ìœ ì§€. í•©ì³ì§€ë©´ 0.
-		for (int i = 0; i < b_len; i++) { 
-			for (auto &k : MT[i]) {
-				for (auto &k2 : MT[i+1]) { // í•´ë°ë””ìŠ¤í„´ìŠ¤ 1ì¸ ê·¸ë£¹
+		bool brk = 1; // ·çÇÁ Å»Ãâ ÇÃ·¡±×. ´õ ÀÌ»ó ÇÕÄ¥ °Ô ¾øÀ¸¸é 1·Î À¯Áö. ÇÕÃÄÁö¸é 0.
+		for (int i = 0; i < b_len; i++) {
+			for (auto& k : MT[i]) {
+				for (auto& k2 : MT[i + 1]) { // ÇØ¹Öµğ½ºÅÏ½º 1ÀÎ ±×·ì
 					int pos;
-					if ((pos = bincmp(k.binary, k2.binary)) != -1) { // ë¹„íŠ¸ê°€ í•˜ë‚˜ë§Œ ë‹¤ë¥¼ ë•Œ ìœ„ì¹˜(ì¸ë±ìŠ¤) ë°˜í™˜, or -1
-						brk = 0; // ë£¨í”„ í•œë²ˆ ë”
-						k.isCmbnd = true; k2.isCmbnd = true; // ì‚¬ìš© í‘œì‹œ
+					if ((pos = bincmp(k.binary, k2.binary)) != -1) { // ºñÆ®°¡ ÇÏ³ª¸¸ ´Ù¸¦ ¶§ À§Ä¡(ÀÎµ¦½º) ¹İÈ¯, or -1
+						brk = 0; // ·çÇÁ ÇÑ¹ø ´õ
+						k.isCmbnd = true; k2.isCmbnd = true; // »ç¿ë Ç¥½Ã
 
 						string combined(k.binary);
-						combined[pos] = '-'; // ê²¹ì¹˜ëŠ” ë¶€ë¶„ '-' í‘œì‹œ
+						combined[pos] = '-'; // °ãÄ¡´Â ºÎºĞ '-' Ç¥½Ã
 						uniq.emplace(combined);
 					}
 				}
 			}
 		}
-		for (int i = 0; i < b_len+1; i++) {
-			for (auto &k : MT[i]) {
-				if (k.isCmbnd == false) 
+		for (int i = 0; i < b_len + 1; i++) {
+			for (auto& k : MT[i]) {
+				if (k.isCmbnd == false)
 					PIs.push_back(k.binary);
 			}
 			MT[i].clear();
-			for (auto &k : uniq)
-				if (count(k.begin(), k.end(), '1') == i) MT[i].push_back(k); // ìƒˆë¡œ ë§Œë“  ê²ƒë“¤ ë‹¤ì‹œ 1ê°œìˆ˜ ìˆœìœ¼ë¡œ ì €ì¥
+			for (auto& k : uniq)
+				if (count(k.begin(), k.end(), '1') == i) MT[i].push_back(k); // »õ·Î ¸¸µç °Íµé ´Ù½Ã 1°³¼ö ¼øÀ¸·Î ÀúÀå
 		}
 		uniq.clear();
 
@@ -124,13 +117,13 @@ for (int fi = 0; fi < 5; fi++) {
 	}
 
 	set<string> EPIs; // Essential PIs
-	vector<int> table; // Essential PIë¥¼ ì°¾ê¸° ìœ„í•œ í‘œ. intí˜• ì •ìˆ˜ë¥¼ í†µí•´ ë¹„íŠ¸ë¡œ í‘œí˜„.(ë©”ëª¨ë¦¬, ì„±ëŠ¥)
+	vector<size_t> table; // Essential PI¸¦ Ã£±â À§ÇÑ Ç¥. Á¤¼ö¸¦ ÅëÇØ ºñÆ®·Î Ç¥Çö.(¸Ş¸ğ¸®, ¼º´É)
 	int col = 0;
 
-	for (int i = 0; i < trueMT.size(); i++) { // ì—´ì„ ë¨¼ì € í™•ì¸í•˜ê¸° ìœ„í•¨
+	for (int i = 0; i < trueMT.size(); i++) { // ¿­À» ¸ÕÀú È®ÀÎÇÏ±â À§ÇÔ
 		col = 0;
-		int cnt = 0; // ì—´ì— PIê°€ ì–¼ë§ˆë‚˜ ìˆëŠ”ì§€ count
-		int pos = -1; // PIê°€ í•˜ë‚˜ì¼ ë•Œ EPIë¡œ ì‚¬ìš©í•  ìˆ˜ ìˆê²Œ ìœ„ì¹˜ ì €ì¥
+		int cnt = 0; // ¿­¿¡ PI°¡ ¾ó¸¶³ª ÀÖ´ÂÁö count
+		int pos = -1; // PI°¡ ÇÏ³ªÀÏ ¶§ EPI·Î »ç¿ëÇÒ ¼ö ÀÖ°Ô À§Ä¡ ÀúÀå
 		for (int j = 0; j < PIs.size(); j++) {
 			if (binMatch(trueMT[i], PIs[j])) {
 				col |= (1 << j);
@@ -138,14 +131,14 @@ for (int fi = 0; fi < 5; fi++) {
 				pos = j;
 			}
 		}
-		if (cnt == 1) { // ì—´ì— PI í•˜ë‚˜ -> Essential PI
-			EPIs.emplace(PIs[pos]); 
-			trueMT.erase(trueMT.begin()+i--); // í•´ë‹¹ true mintermì€ í•„ìš” ì—†ì–´ì§.
+		if (cnt == 1) { // ¿­¿¡ PI ÇÏ³ª -> Essential PI
+			EPIs.emplace(PIs[pos]);
+			trueMT.erase(trueMT.begin() + i--); // ÇØ´ç true mintermÀº ÇÊ¿ä ¾ø¾îÁü.
 			if (!trueMT.empty()) {
 				for (int t = 0; t < i; t++) {
 					if (table[t] & (1 << pos)) {
-						table.erase(table.begin() + t); // ë°©ê¸ˆ ì„ íƒí•œ PIê°€ í¬í•¨í•˜ëŠ” ë²”ìœ„. í•´ë‹¹ ì—´ ì‚­ì œ
-						trueMT.erase(trueMT.begin()+t--); i--;
+						table.erase(table.begin() + t); // ¹æ±İ ¼±ÅÃÇÑ PI°¡ Æ÷ÇÔÇÏ´Â ¹üÀ§. ÇØ´ç ¿­ »èÁ¦
+						trueMT.erase(trueMT.begin() + t--); i--;
 					}
 				}
 			}
@@ -153,13 +146,12 @@ for (int fi = 0; fi < 5; fi++) {
 		else table.push_back(col);
 	}
 
-	while(!trueMT.empty()) { // EPI ë‹¤ ëª»ì°¾ì€ ê²½ìš°
-		int maxMt = 0; // í•œ í–‰ë‹¹ mintermì˜ ìµœëŒ€ ê°œìˆ˜
-		int maxpos = -1; // mintermì´ ê°€ì¥ ë§ì€ í–‰ì˜ ìœ„ì¹˜
-		int max_dash = 0; // ê°€ì¥ ë§ì€ í–‰ì´ ë‘ê°œ ì´ìƒì´ë¼ë©´, íŠ¸ëœì§€ìŠ¤í„°ë¥¼ ì¤„ì´ê¸° ìœ„í•´ ëŒ€ì‹œê°€ ë§ì€ ê²ƒì„ ì„ íƒ
-
+	while (!trueMT.empty()) { // EPI ´Ù ¸øÃ£Àº °æ¿ì
+		int maxMt = 0; // ÇÑ Çà´ç mintermÀÇ ÃÖ´ë °³¼ö
+		int maxpos = -1; // mintermÀÌ °¡Àå ¸¹Àº ÇàÀÇ À§Ä¡
+		
 		if (trueMT.size() < 2) {
-			for (int i = 0; i < PIs.size(); i++) { // í•˜ë‚˜ë§Œ ë‚¨ì€ ê²½ìš°
+			for (int i = 0; i < PIs.size(); i++) { // ÇÏ³ª¸¸ ³²Àº °æ¿ì
 				if (table[0] & (1 << i)) {
 					EPIs.emplace(PIs[i]);
 					break;
@@ -167,35 +159,30 @@ for (int fi = 0; fi < 5; fi++) {
 			}
 		}
 
-		for (int i = 0; i < PIs.size(); i++) { // maxMT, maxpos ì°¾ê¸°
+		for (int i = 0; i < PIs.size(); i++) { // maxMT, maxpos Ã£±â
 			int cnt = 0;
 			for (int j = 0; j < trueMT.size(); j++) {
-				if (table[j] & (1 << i)) cnt++; // MTê°€ ìˆìœ¼ë©´ ì¹´ìš´íŠ¸
+				if (table[j] & (1 << i)) cnt++; // MT°¡ ÀÖÀ¸¸é Ä«¿îÆ®
 			}
-			if (maxMt < cnt) { // mintermì´ ë” ë§ì€ í–‰ì„ ë°œê²¬í–ˆì„ ë•Œ
+			if (maxMt < cnt) { // mintermÀÌ ´õ ¸¹Àº ÇàÀ» ¹ß°ßÇßÀ» ¶§
 				maxMt = cnt;
-				max_dash = count(PIs[i].begin(), PIs[i].end(), '-');
-				maxpos = i;
-			}
-			else if (maxMt == cnt && max_dash < count(PIs[i].begin(), PIs[i].end(), '-')) { // mintermì€ ê°™ì§€ë§Œ '-'ê°€ ë” ë§ì€ í–‰ì„ ë°œê²¬í–ˆì„ ë•Œ
-				max_dash = count(PIs[i].begin(), PIs[i].end(), '-');
 				maxpos = i;
 			}
 		}
-		EPIs.emplace(PIs[maxpos]); // ì°¾ì€ í–‰ EPIë¡œ ì €ì¥
-		for (int i = 0; i < trueMT.size(); i++) { // í•´ë‹¹ PIê°€ ì»¤ë²„í•˜ëŠ” mintermë“¤ ì‚­ì œ
+		EPIs.emplace(PIs[maxpos]); // Ã£Àº Çà EPI·Î ÀúÀå
+		for (int i = 0; i < trueMT.size(); i++) { // ÇØ´ç PI°¡ Ä¿¹öÇÏ´Â mintermµé »èÁ¦
 			if (table[i] & (1 << maxpos)) {
 				table.erase(table.begin() + i);
-				trueMT.erase(trueMT.begin()+i--);
+				trueMT.erase(trueMT.begin() + i--);
 			}
 		}
 	}
-	
-	for (auto &k : EPIs) {
-			fout << k << '\n';
+
+	for (auto& k : EPIs) {
+		fout << k << '\n';
 	}	fout << "\nCost(# of transistors): " << getNumTrans(EPIs, PIs[0].length());
 
 	fin.close();
-}
 	fout.close();
 }
+`
